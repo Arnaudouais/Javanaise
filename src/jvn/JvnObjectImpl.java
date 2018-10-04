@@ -5,13 +5,12 @@ import java.io.Serializable;
 public class JvnObjectImpl implements JvnObject {
 	
 	int joi;
-	enum lock {
-	    R,W,RC,WC,RWC
-	}
+	Lock lock;
 	Serializable o = null;
 	
 	public JvnObjectImpl (int joi, Serializable o){
 		this.joi = joi;
+		this.lock = Lock.W;
 		this.o = o;
 	}
 
@@ -36,7 +35,7 @@ public class JvnObjectImpl implements JvnObject {
 	@Override
 	public int jvnGetObjectId() throws JvnException {
 		// TODO Auto-generated method stub
-		return 0;
+		return this.joi;
 	}
 
 	@Override

@@ -8,7 +8,13 @@
 
 package jvn;
 
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.awt.List;
 import java.io.Serializable;
 
 
@@ -18,18 +24,30 @@ public class JvnCoordImpl
 	
 
 	private static JvnCoordImpl jvnCoord= null;
+	int idToGive = 0;
+	ArrayList<Lock> lockList;
+	HashMap<String, JvnObject> mapCoord;
   /**
   * Default constructor
   * @throws JvnException
   **/
 	private JvnCoordImpl() throws Exception {
 		// to be completed
+		lockList = new ArrayList<Lock>();
+		mapCoord = new HashMap<String, JvnObject>();
 	}
 	
 	public static JvnCoordImpl jvnGetCoord() {
 		if (jvnCoord == null){
 			try {
 				jvnCoord = new JvnCoordImpl();
+				JvnRemoteCoord coord_stub = (JvnRemoteCoord) UnicastRemoteObject.exportObject(jvnCoord, 0);
+
+
+			    // Register the remote object in RMI registry with a given identifier
+			    Registry registry= LocateRegistry.getRegistry();
+			    registry.bind("CoordinatorService", coord_stub);
+				
 			} catch (Exception e) {
 				return null;
 			}
@@ -45,7 +63,9 @@ public class JvnCoordImpl
   public int jvnGetObjectId()
   throws java.rmi.RemoteException,jvn.JvnException {
     // to be completed 
-    return 0;
+	idToGive++;
+	
+    return idToGive;
   }
   
   /**
@@ -58,7 +78,9 @@ public class JvnCoordImpl
   **/
   public void jvnRegisterObject(String jon, JvnObject jo, JvnRemoteServer js)
   throws java.rmi.RemoteException,jvn.JvnException{
-    // to be completed 
+	
+	  mapCoord.put(jon, jo);
+	  js.jvnInvalidateWriter( jo.jvnGetObjectId());
   }
   
   /**
