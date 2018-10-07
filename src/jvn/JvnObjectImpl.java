@@ -28,7 +28,8 @@ public class JvnObjectImpl implements JvnObject {
 
 	@Override
 	public void jvnUnLock() throws JvnException {
-		// TODO Auto-generated method stub
+		if (lock.equals(Lock.W)) lock = Lock.WC;
+		if (lock.equals(Lock.R)) lock = Lock.RC;
 
 	}
 

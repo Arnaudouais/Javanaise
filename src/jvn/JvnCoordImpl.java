@@ -26,7 +26,7 @@ public class JvnCoordImpl
 	private static JvnCoordImpl jvnCoord= null;
 	int idToGive = 0;
 	ArrayList<Lock> lockList;
-	HashMap<String, JvnObject> mapCoord;
+	HashMap<String, JvnInfos> mapCoord;
   /**
   * Default constructor
   * @throws JvnException
@@ -34,7 +34,7 @@ public class JvnCoordImpl
 	private JvnCoordImpl() throws Exception {
 		// to be completed
 		lockList = new ArrayList<Lock>();
-		mapCoord = new HashMap<String, JvnObject>();
+		mapCoord = new HashMap<String, JvnInfos>();
 	}
 	
 	public static JvnCoordImpl jvnGetCoord() {
@@ -79,8 +79,7 @@ public class JvnCoordImpl
   public void jvnRegisterObject(String jon, JvnObject jo, JvnRemoteServer js)
   throws java.rmi.RemoteException,jvn.JvnException{
 	
-	  mapCoord.put(jon, jo);
-	  js.jvnInvalidateWriter( jo.jvnGetObjectId());
+	  mapCoord.put(jon, new JvnInfos(jo,Lock.NL,js));
   }
   
   /**
