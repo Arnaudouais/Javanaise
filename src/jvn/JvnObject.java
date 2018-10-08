@@ -47,6 +47,21 @@ public interface JvnObject extends Serializable {
 	throws jvn.JvnException; 
 	
 	/**
+	* Get the object lock
+	* @throws JvnException
+	**/
+	public Lock jvnGetObjectLock()
+	throws jvn.JvnException; 
+	
+	/**
+	* Set the object lock
+	* @throws JvnException
+	**/
+	public void jvnSetObjectLock(Lock l)
+	throws jvn.JvnException; 
+	
+	
+	/**
 	* Get the object state
 	* @throws JvnException
 	**/

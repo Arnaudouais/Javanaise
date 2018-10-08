@@ -25,19 +25,19 @@ public class JvnCoordImpl
 
 	private static JvnCoordImpl jvnCoord= null;
 	int idToGive = 0;
-	ArrayList<Lock> lockList;
 	HashMap<String, JvnInfos> mapCoord;
+	ArrayList<String> names;
   /**
   * Default constructor
   * @throws JvnException
   **/
 	private JvnCoordImpl() throws Exception {
 		// to be completed
-		lockList = new ArrayList<Lock>();
 		mapCoord = new HashMap<String, JvnInfos>();
+		names = new ArrayList<String>();
 	}
 	
-	public static JvnCoordImpl jvnGetCoord() {
+	public static void jvnLaunchCoord() {
 		if (jvnCoord == null){
 			try {
 				jvnCoord = new JvnCoordImpl();
@@ -46,13 +46,13 @@ public class JvnCoordImpl
 
 			    // Register the remote object in RMI registry with a given identifier
 			    Registry registry= LocateRegistry.getRegistry();
-			    registry.bind("CoordinatorService", coord_stub);
+			    registry.bind("CoordinatorService", jvnCoord);
 				
 			} catch (Exception e) {
-				return null;
+				System.err.println("Error :" + e) ;
+				e.printStackTrace();
 			}
 		}
-		return jvnCoord;
 	}
 
   /**
@@ -64,7 +64,6 @@ public class JvnCoordImpl
   throws java.rmi.RemoteException,jvn.JvnException {
     // to be completed 
 	idToGive++;
-	
     return idToGive;
   }
   
@@ -78,8 +77,11 @@ public class JvnCoordImpl
   **/
   public void jvnRegisterObject(String jon, JvnObject jo, JvnRemoteServer js)
   throws java.rmi.RemoteException,jvn.JvnException{
-	
-	  mapCoord.put(jon, new JvnInfos(jo,Lock.NL,js));
+	  if (!mapCoord.containsKey(jon)){
+		  mapCoord.put(jon, new JvnInfos(jo.jvnGetObjectId(),jo.jvnGetObjectState(),jo.jvnGetObjectLock(),js));
+		  names.add(jo.jvnGetObjectId(), jon);
+	  }
+	  
   }
   
   /**
@@ -103,8 +105,29 @@ public class JvnCoordImpl
   **/
    public Serializable jvnLockRead(int joi, JvnRemoteServer js)
    throws java.rmi.RemoteException, JvnException{
-    // to be completed
-    return null;
+    JvnInfos obj = mapCoord.get(names.get(joi));
+    Lock l = obj.jvnGetLock();
+    if(l.equals(Lock.R)){
+    	obj.jvnAddServer(js);
+    }
+    else if (l.equals(Lock.W)){
+    	if(obj.jvnGetClients().size()>1){
+    		throw new JvnException("Too many writers");
+    	}
+    	for(JvnRemoteServer client : obj.jvnGetClients()){
+    		obj.jvnSetState(client.jvnInvalidateWriterForReader(joi));
+    	}
+    	obj.jvnSetLock(Lock.R);
+    }
+    else if(l.equals(Lock.NL)){
+    	obj.jvnSetLock(Lock.R);
+    	obj.jvnAddServer(js);
+    	
+    }
+    else{
+		throw new JvnException("Weird lock value");
+	}
+    return obj.jvnGetState();
    }
 
   /**
@@ -116,8 +139,34 @@ public class JvnCoordImpl
   **/
    public Serializable jvnLockWrite(int joi, JvnRemoteServer js)
    throws java.rmi.RemoteException, JvnException{
-    // to be completed
-    return null;
+	   JvnInfos obj = mapCoord.get(names.get(joi));
+	    Lock l = obj.jvnGetLock();
+	    if(l.equals(Lock.R)){
+	    	for(JvnRemoteServer client : obj.jvnGetClients()){
+	    		client.jvnInvalidateReader(joi);
+	    		obj.jvnGetClients().remove(client);
+	    	}
+	    }
+	    else if (l.equals(Lock.W)){
+	    	if(obj.jvnGetClients().size()>1){
+	    		throw new JvnException("Too many writers");
+	    	}
+	    	for(JvnRemoteServer client : obj.jvnGetClients()){
+	    		obj.jvnSetState(client.jvnInvalidateWriter(joi));
+	    		obj.jvnGetClients().remove(client);
+	    	}
+	    }
+	    else if(l.equals(Lock.NL)){
+	    	
+	    	obj.jvnAddServer(js);
+	    	
+	    }
+	    else{
+			throw new JvnException("Weird lock value");
+		}
+	    
+	    obj.jvnSetLock(Lock.W);
+	    return obj.jvnGetState();
    }
 
 	/**

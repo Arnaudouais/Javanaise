@@ -11,6 +11,7 @@ package jvn;
 import java.rmi.RemoteException;
 import java.rmi.registry.*;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.io.*;
 
 
@@ -23,6 +24,7 @@ public class JvnServerImpl
 	private static JvnServerImpl js = null;
 	Registry registry = null;
 	JvnRemoteCoord coord = null;
+	ArrayList<JvnObject> objects;
   /**
   * Default constructor
   * @throws JvnException
@@ -32,6 +34,7 @@ public class JvnServerImpl
 		// to be completed
 		registry = LocateRegistry.getRegistry(host);
 		coord = (JvnRemoteCoord) registry.lookup("CoordinatorService");
+		objects = new ArrayList<JvnObject>();
 	}
 	
   /**
@@ -69,7 +72,8 @@ public class JvnServerImpl
 		int joi;
 		try{
 		joi = coord.jvnGetObjectId();
-		JvnObject obj = new JvnObjectImpl(joi,o);
+		JvnObject obj = new JvnObjectImpl(joi,o,js);
+		objects.add(obj);
 		return obj;
 		} catch (RemoteException e){
 			System.err.println("Error :" + e) ;
@@ -86,7 +90,6 @@ public class JvnServerImpl
 	**/
 	public  void jvnRegisterObject(String jon, JvnObject jo)
 	throws jvn.JvnException {
-		//TODO
 		try{
 			coord.jvnRegisterObject(jon, jo, js);
 		} catch (RemoteException e){
@@ -115,7 +118,13 @@ public class JvnServerImpl
 	**/
    public Serializable jvnLockRead(int joi)
 	 throws JvnException {
-		// to be completed 
+		// TODO si on a deja le lock ne rien faire??
+	   	try{
+	   		return coord.jvnLockRead(joi, js);
+		} catch (RemoteException e){
+			System.err.println("Error :" + e) ;
+			e.printStackTrace();
+		}
 		return null;
 
 	}	
@@ -127,7 +136,12 @@ public class JvnServerImpl
 	**/
    public Serializable jvnLockWrite(int joi)
 	 throws JvnException {
-		// to be completed 
+	   try{
+	   		return coord.jvnLockWrite(joi, js);
+		} catch (RemoteException e){
+			System.err.println("Error :" + e) ;
+			e.printStackTrace();
+		}
 		return null;
 	}	
 
@@ -141,7 +155,7 @@ public class JvnServerImpl
 	**/
   public void jvnInvalidateReader(int joi)
 	throws java.rmi.RemoteException,jvn.JvnException {
-		// to be completed 
+		objects.get(joi).jvnInvalidateReader(); 
 	};
 	    
 	/**
@@ -152,8 +166,7 @@ public class JvnServerImpl
 	**/
   public Serializable jvnInvalidateWriter(int joi)
 	throws java.rmi.RemoteException,jvn.JvnException { 
-		// to be completed 
-		return null;
+	  return objects.get(joi).jvnInvalidateWriter(); 
 	};
 	
 	/**
@@ -164,8 +177,7 @@ public class JvnServerImpl
 	**/
    public Serializable jvnInvalidateWriterForReader(int joi)
 	 throws java.rmi.RemoteException,jvn.JvnException { 
-		// to be completed 
-		return null;
+		return objects.get(joi).jvnInvalidateWriterForReader(); 
 	 };
 
 }

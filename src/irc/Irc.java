@@ -28,13 +28,15 @@ public class Irc {
   **/
 	public static void main(String argv[]) {
 	   try {
-		String host = argv[0];   
+		//String host = argv[0]; 
+		String host = "127.0.0.1";
 		// initialize JVN
 		JvnServerImpl js = JvnServerImpl.jvnGetServer(host);
 		
 		// look up the IRC object in the JVN server
 		// if not found, create it, and register it in the JVN server
 		JvnObject jo = js.jvnLookupObject("IRC");
+		//JvnObject jo = null;
 		   
 		if (jo == null) {
 			jo = js.jvnCreateObject((Serializable) new Sentence());
@@ -47,6 +49,7 @@ public class Irc {
 	   
 	   } catch (Exception e) {
 		   System.out.println("IRC problem : " + e.getMessage());
+		   e.printStackTrace();
 	   }
 	}
 
@@ -106,6 +109,7 @@ public class Irc {
 		irc.text.append(s+"\n");
 	   } catch (JvnException je) {
 		   System.out.println("IRC problem : " + je.getMessage());
+		   je.printStackTrace();
 	   }
 	}
 }
