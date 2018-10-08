@@ -39,6 +39,7 @@ public class Irc {
 		//JvnObject jo = null;
 		   
 		if (jo == null) {
+			System.out.println("AAAAAAAAH");
 			jo = js.jvnCreateObject((Serializable) new Sentence());
 			// after creation, I have a write lock on the object
 			jo.jvnUnLock();

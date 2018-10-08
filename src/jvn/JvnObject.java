@@ -60,6 +60,13 @@ public interface JvnObject extends Serializable {
 	public void jvnSetObjectLock(Lock l)
 	throws jvn.JvnException; 
 	
+	/**
+	* Set the local server
+	* @throws JvnException
+	**/
+	public void jvnSetObjectServer(JvnLocalServer js)
+	throws jvn.JvnException; 
+	
 	
 	/**
 	* Get the object state

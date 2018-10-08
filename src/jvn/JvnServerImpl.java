@@ -91,7 +91,7 @@ public class JvnServerImpl
 	public  void jvnRegisterObject(String jon, JvnObject jo)
 	throws jvn.JvnException {
 		try{
-			coord.jvnRegisterObject(jon, jo, js);
+			coord.jvnRegisterObject(jon, jo, (JvnRemoteServer)js);
 		} catch (RemoteException e){
 			System.err.println("Error :" + e) ;
 			e.printStackTrace();
@@ -106,7 +106,16 @@ public class JvnServerImpl
 	**/
 	public  JvnObject jvnLookupObject(String jon)
 	throws jvn.JvnException {
-    // to be completed 
+		try{
+			JvnObject tmp = coord.jvnLookupObject(jon, js);
+			if(tmp != null) {
+				tmp.jvnSetObjectServer(js);
+			}
+			return tmp;
+		} catch (RemoteException e){
+			System.err.println("Error :" + e) ;
+			e.printStackTrace();
+		}
 		return null;
 	}	
 	

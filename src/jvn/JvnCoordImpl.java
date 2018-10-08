@@ -26,7 +26,8 @@ public class JvnCoordImpl
 	private static JvnCoordImpl jvnCoord= null;
 	int idToGive = 0;
 	HashMap<String, JvnInfos> mapCoord;
-	ArrayList<String> names;
+	HashMap<Integer,String> names;
+	
   /**
   * Default constructor
   * @throws JvnException
@@ -34,19 +35,19 @@ public class JvnCoordImpl
 	private JvnCoordImpl() throws Exception {
 		// to be completed
 		mapCoord = new HashMap<String, JvnInfos>();
-		names = new ArrayList<String>();
+		names = new HashMap<Integer, String>();
 	}
 	
 	public static void jvnLaunchCoord() {
 		if (jvnCoord == null){
 			try {
 				jvnCoord = new JvnCoordImpl();
-				JvnRemoteCoord coord_stub = (JvnRemoteCoord) UnicastRemoteObject.exportObject(jvnCoord, 0);
+				//JvnRemoteCoord coord_stub = (JvnRemoteCoord) UnicastRemoteObject.exportObject(jvnCoord, 0);
 
 
 			    // Register the remote object in RMI registry with a given identifier
 			    Registry registry= LocateRegistry.getRegistry();
-			    registry.bind("CoordinatorService", jvnCoord);
+			    registry.rebind("CoordinatorService", jvnCoord);
 				
 			} catch (Exception e) {
 				System.err.println("Error :" + e) ;
@@ -79,7 +80,7 @@ public class JvnCoordImpl
   throws java.rmi.RemoteException,jvn.JvnException{
 	  if (!mapCoord.containsKey(jon)){
 		  mapCoord.put(jon, new JvnInfos(jo.jvnGetObjectId(),jo.jvnGetObjectState(),jo.jvnGetObjectLock(),js));
-		  names.add(jo.jvnGetObjectId(), jon);
+		  names.put(jo.jvnGetObjectId(), jon);
 	  }
 	  
   }
@@ -92,7 +93,11 @@ public class JvnCoordImpl
   **/
   public JvnObject jvnLookupObject(String jon, JvnRemoteServer js)
   throws java.rmi.RemoteException,jvn.JvnException{
-    // to be completed 
+    JvnInfos infos = mapCoord.get(jon);
+    if(infos != null){
+    	JvnObject tmp = new JvnObjectImpl(infos.jvnGetIdentifier(), infos.jvnGetState());
+    	return tmp;
+    }
     return null;
   }
   
@@ -105,7 +110,7 @@ public class JvnCoordImpl
   **/
    public Serializable jvnLockRead(int joi, JvnRemoteServer js)
    throws java.rmi.RemoteException, JvnException{
-    JvnInfos obj = mapCoord.get(names.get(joi));
+    JvnInfos obj = mapCoord.get(names.get((Integer)joi));
     Lock l = obj.jvnGetLock();
     if(l.equals(Lock.R)){
     	obj.jvnAddServer(js);
@@ -139,13 +144,14 @@ public class JvnCoordImpl
   **/
    public Serializable jvnLockWrite(int joi, JvnRemoteServer js)
    throws java.rmi.RemoteException, JvnException{
-	   JvnInfos obj = mapCoord.get(names.get(joi));
+	   JvnInfos obj = mapCoord.get(names.get((Integer)joi));
 	    Lock l = obj.jvnGetLock();
 	    if(l.equals(Lock.R)){
 	    	for(JvnRemoteServer client : obj.jvnGetClients()){
 	    		client.jvnInvalidateReader(joi);
 	    		obj.jvnGetClients().remove(client);
 	    	}
+	    	obj.jvnAddServer(js);
 	    }
 	    else if (l.equals(Lock.W)){
 	    	if(obj.jvnGetClients().size()>1){
@@ -155,6 +161,7 @@ public class JvnCoordImpl
 	    		obj.jvnSetState(client.jvnInvalidateWriter(joi));
 	    		obj.jvnGetClients().remove(client);
 	    	}
+	    	obj.jvnAddServer(js);
 	    }
 	    else if(l.equals(Lock.NL)){
 	    	

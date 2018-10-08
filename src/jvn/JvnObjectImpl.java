@@ -7,7 +7,7 @@ public class JvnObjectImpl implements JvnObject {
 	int joi;
 	Lock lock;
 	Serializable o = null;
-	JvnLocalServer js = null;
+	transient JvnLocalServer js = null;
 	
 	public JvnObjectImpl (int joi, Serializable o, JvnLocalServer js){
 		this.joi = joi;
@@ -15,24 +15,103 @@ public class JvnObjectImpl implements JvnObject {
 		this.o = o;
 		this.js = js;
 	}
+	
+	public JvnObjectImpl (int joi, Serializable o){
+		this.joi = joi;
+		this.lock = Lock.W;
+		this.o = o;
+		this.js = null;
+	}
 
 	@Override
 	public void jvnLockRead() throws JvnException {
-		o = js.jvnLockRead(joi);
-		lock = Lock.R;
+		//switch 
+		 //R, W, RC, WC, RWC, NL
+		synchronized(this){
+			System.out.println("jvnLockRead : Lock."+lock.toString());
+			switch(lock){
+	    	case R :
+	    		break;
+	    	case RC :
+	    		lock = Lock.R;
+	    		break;
+	    	case RWC :
+	    		break;
+	    	case WC:
+	    		lock = Lock.RWC;
+	    		break;
+	    	case W :
+	    		do{
+	    			try{
+						wait();
+					} catch (Exception e){
+						System.err.println("Error :" + e) ;
+						e.printStackTrace();
+					}
+	    		} while(lock.equals(Lock.W));
+	    		o = js.jvnLockRead(joi);
+	    		lock = Lock.RWC;
+	    		break;
+	    	case NL :
+	    		o = js.jvnLockRead(joi);
+	    		lock = Lock.R;
+	    		break;
+			}
+		}
+		
+		
 
 	}
 
 	@Override
 	public void jvnLockWrite() throws JvnException {
-		o = js.jvnLockWrite(joi);
-		lock = Lock.W;
+		synchronized(this){
+			System.out.println("jvnLockWrite : Lock."+lock.toString());
+			switch(lock){
+	    	case R :
+	    		do{
+	    			try{
+						wait();
+					} catch (Exception e){
+						System.err.println("Error :" + e) ;
+						e.printStackTrace();
+					}
+	    		} while(lock.equals(Lock.R));
+	    		o = js.jvnLockWrite(joi);
+	    		lock = Lock.W;
+	    		break;
+	    	case RC :
+	    		o = js.jvnLockWrite(joi);
+	    		lock = Lock.W;
+	    		break;
+	    	case RWC :
+	    		do{
+	    			try{
+						wait();
+					} catch (Exception e){
+						System.err.println("Error :" + e) ;
+						e.printStackTrace();
+					}
+	    		} while(lock.equals(Lock.RWC));
+	    		break;
+	    	case WC:
+	    		lock = Lock.W;
+	    		break;
+	    	case W :
+	    		break;
+	    	case NL :
+	    		o = js.jvnLockWrite(joi);
+	    		lock = Lock.W;
+	    		break;
+			}
+		}
 	}
 
 	@Override
-	public void jvnUnLock() throws JvnException {
+	public synchronized void jvnUnLock() throws JvnException {
 		if (lock.equals(Lock.W)) lock = Lock.WC;
 		if (lock.equals(Lock.R)) lock = Lock.RC;
+		if (lock.equals(Lock.RWC)) lock = Lock.WC;
 		notifyAll();
 	}
 
@@ -47,7 +126,7 @@ public class JvnObjectImpl implements JvnObject {
 	}
 
 	@Override
-	public void jvnInvalidateReader() throws JvnException {
+	public synchronized void jvnInvalidateReader() throws JvnException {
 		if(lock.equals(Lock.RC)){
 			lock = Lock.NL;
 		}
@@ -69,7 +148,7 @@ public class JvnObjectImpl implements JvnObject {
 	}
 
 	@Override
-	public Serializable jvnInvalidateWriter() throws JvnException {
+	public synchronized Serializable jvnInvalidateWriter() throws JvnException {
 		if(lock.equals(Lock.WC) || lock.equals(Lock.RWC)){
 			lock = Lock.NL;
 		}
@@ -90,7 +169,7 @@ public class JvnObjectImpl implements JvnObject {
 	}
 
 	@Override
-	public Serializable jvnInvalidateWriterForReader() throws JvnException {
+	public synchronized Serializable jvnInvalidateWriterForReader() throws JvnException {
 		if(lock.equals(Lock.RWC)){
 			lock = Lock.R;
 		}
@@ -122,6 +201,11 @@ public class JvnObjectImpl implements JvnObject {
 	@Override
 	public void jvnSetObjectLock(Lock l) throws JvnException {
 		this.lock = l;	
+	}
+
+	@Override
+	public void jvnSetObjectServer(JvnLocalServer js) throws JvnException {
+		this.js = js;	
 	}
 
 }

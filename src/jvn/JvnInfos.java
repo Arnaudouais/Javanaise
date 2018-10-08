@@ -4,10 +4,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class JvnInfos {
-	int joi;
-	Serializable o;
-	Lock l;
-	ArrayList<JvnRemoteServer> clients;
+	int joi; //object indentifier
+	Serializable o; // object data
+	Lock l; //object lock
+	ArrayList<JvnRemoteServer> clients; // object references of clients
 	public JvnInfos(int joi, Serializable o, Lock l, JvnRemoteServer client) {
 		this.joi = joi;
 		this.o = o;
