@@ -12,6 +12,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.*;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.io.*;
 
 
@@ -24,7 +25,7 @@ public class JvnServerImpl
 	private static JvnServerImpl js = null;
 	Registry registry = null;
 	JvnRemoteCoord coord = null;
-	ArrayList<JvnObject> objects;
+	HashMap<Integer,JvnObject> objects;
   /**
   * Default constructor
   * @throws JvnException
@@ -34,7 +35,7 @@ public class JvnServerImpl
 		// to be completed
 		registry = LocateRegistry.getRegistry(host);
 		coord = (JvnRemoteCoord) registry.lookup("CoordinatorService");
-		objects = new ArrayList<JvnObject>();
+		objects = new HashMap<Integer, JvnObject>();
 	}
 	
   /**
@@ -73,7 +74,7 @@ public class JvnServerImpl
 		try{
 		joi = coord.jvnGetObjectId();
 		JvnObject obj = new JvnObjectImpl(joi,o,js);
-		objects.add(obj);
+		objects.put(joi, obj);
 		return obj;
 		} catch (RemoteException e){
 			System.err.println("Error :" + e) ;
@@ -110,6 +111,7 @@ public class JvnServerImpl
 			JvnObject tmp = coord.jvnLookupObject(jon, js);
 			if(tmp != null) {
 				tmp.jvnSetObjectServer(js);
+				objects.put(tmp.jvnGetObjectId(), tmp);
 			}
 			return tmp;
 		} catch (RemoteException e){
@@ -127,7 +129,6 @@ public class JvnServerImpl
 	**/
    public Serializable jvnLockRead(int joi)
 	 throws JvnException {
-		// TODO si on a deja le lock ne rien faire??
 	   	try{
 	   		return coord.jvnLockRead(joi, js);
 		} catch (RemoteException e){

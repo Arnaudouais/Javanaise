@@ -13,6 +13,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.awt.List;
 import java.io.Serializable;
@@ -79,7 +80,14 @@ public class JvnCoordImpl
   public void jvnRegisterObject(String jon, JvnObject jo, JvnRemoteServer js)
   throws java.rmi.RemoteException,jvn.JvnException{
 	  if (!mapCoord.containsKey(jon)){
-		  mapCoord.put(jon, new JvnInfos(jo.jvnGetObjectId(),jo.jvnGetObjectState(),jo.jvnGetObjectLock(),js));
+		  Lock tmpLock = jo.jvnGetObjectLock();
+		  if(tmpLock.equals(Lock.RC)){
+			  tmpLock = Lock.R;
+		  }
+		  else if(tmpLock.equals(Lock.WC) || tmpLock.equals(Lock.RWC)){
+			  tmpLock = Lock.W;
+		  }
+		  mapCoord.put(jon, new JvnInfos(jo.jvnGetObjectId(),jo.jvnGetObjectState(),tmpLock,js));
 		  names.put(jo.jvnGetObjectId(), jon);
 	  }
 	  
@@ -118,11 +126,16 @@ public class JvnCoordImpl
     else if (l.equals(Lock.W)){
     	if(obj.jvnGetClients().size()>1){
     		throw new JvnException("Too many writers");
+    	}   	
+    	Serializable newState = null;
+    	for (Iterator<JvnRemoteServer> iterator = obj.jvnGetClients().iterator(); iterator.hasNext(); ) {
+    		JvnRemoteServer client = iterator.next();
+    		newState = client.jvnInvalidateWriterForReader(joi); 
     	}
-    	for(JvnRemoteServer client : obj.jvnGetClients()){
-    		obj.jvnSetState(client.jvnInvalidateWriterForReader(joi));
-    	}
+    	if(newState == null) throw new JvnException("Could not get data when invalidating Writer");
+    	obj.jvnSetState(newState);
     	obj.jvnSetLock(Lock.R);
+    	obj.jvnAddServer(js);
     }
     else if(l.equals(Lock.NL)){
     	obj.jvnSetLock(Lock.R);
@@ -130,7 +143,7 @@ public class JvnCoordImpl
     	
     }
     else{
-		throw new JvnException("Weird lock value");
+		throw new JvnException("jvnLockRead : Weird lock value : "+l);
 	}
     return obj.jvnGetState();
    }
@@ -147,9 +160,10 @@ public class JvnCoordImpl
 	   JvnInfos obj = mapCoord.get(names.get((Integer)joi));
 	    Lock l = obj.jvnGetLock();
 	    if(l.equals(Lock.R)){
-	    	for(JvnRemoteServer client : obj.jvnGetClients()){
+	    	for (Iterator<JvnRemoteServer> iterator = obj.jvnGetClients().iterator(); iterator.hasNext(); ) {
+	    		JvnRemoteServer client = iterator.next();
 	    		client.jvnInvalidateReader(joi);
-	    		obj.jvnGetClients().remove(client);
+	    	    iterator.remove(); 
 	    	}
 	    	obj.jvnAddServer(js);
 	    }
@@ -157,10 +171,14 @@ public class JvnCoordImpl
 	    	if(obj.jvnGetClients().size()>1){
 	    		throw new JvnException("Too many writers");
 	    	}
-	    	for(JvnRemoteServer client : obj.jvnGetClients()){
-	    		obj.jvnSetState(client.jvnInvalidateWriter(joi));
-	    		obj.jvnGetClients().remove(client);
+	    	Serializable newState = null;
+	    	for (Iterator<JvnRemoteServer> iterator = obj.jvnGetClients().iterator(); iterator.hasNext(); ) {
+	    		JvnRemoteServer client = iterator.next();
+	    		newState = client.jvnInvalidateWriter(joi);
+	    	    iterator.remove(); 
 	    	}
+	    	if(newState == null) throw new JvnException("Could not get data when invalidating Writer");
+	    	obj.jvnSetState(newState);
 	    	obj.jvnAddServer(js);
 	    }
 	    else if(l.equals(Lock.NL)){
@@ -169,7 +187,7 @@ public class JvnCoordImpl
 	    	
 	    }
 	    else{
-			throw new JvnException("Weird lock value");
+	    	throw new JvnException("jvnLockWrite : Weird lock value : "+l);
 		}
 	    
 	    obj.jvnSetLock(Lock.W);

@@ -97,13 +97,16 @@ public class Irc {
 	public void actionPerformed (ActionEvent e) {
 	 try {
 		// lock the object in read mode
+		System.out.println("jvnLockRead : Lock."+irc.sentence.jvnGetObjectLock().toString());
 		irc.sentence.jvnLockRead();
+		System.out.println("---jvnLockRead : Lock."+irc.sentence.jvnGetObjectLock().toString());
 		
 		// invoke the method
 		String s = ((Sentence)(irc.sentence.jvnGetObjectState())).read();
 		
 		// unlock the object
 		irc.sentence.jvnUnLock();
+		System.out.println("---jvnUnlock : Lock."+irc.sentence.jvnGetObjectLock().toString());
 		
 		// display the read value
 		irc.data.setText(s);
@@ -134,13 +137,16 @@ public class Irc {
     String s = irc.data.getText();
         	
     // lock the object in write mode
+    	System.out.println("jvnLockWrite : Lock."+irc.sentence.jvnGetObjectLock().toString());
 		irc.sentence.jvnLockWrite();
+		System.out.println("---jvnLockWrite : Lock."+irc.sentence.jvnGetObjectLock().toString());
 		
 		// invoke the method
 		((Sentence)(irc.sentence.jvnGetObjectState())).write(s);
 		
 		// unlock the object
 		irc.sentence.jvnUnLock();
+		System.out.println("---jvnUnlock : Lock."+irc.sentence.jvnGetObjectLock().toString());
 	 } catch (JvnException je) {
 		   System.out.println("IRC problem  : " + je.getMessage());
 	 }

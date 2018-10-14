@@ -18,7 +18,7 @@ public class JvnObjectImpl implements JvnObject {
 	
 	public JvnObjectImpl (int joi, Serializable o){
 		this.joi = joi;
-		this.lock = Lock.W;
+		this.lock = Lock.NL;
 		this.o = o;
 		this.js = null;
 	}
@@ -27,8 +27,6 @@ public class JvnObjectImpl implements JvnObject {
 	public void jvnLockRead() throws JvnException {
 		//switch 
 		 //R, W, RC, WC, RWC, NL
-		synchronized(this){
-			System.out.println("jvnLockRead : Lock."+lock.toString());
 			switch(lock){
 	    	case R :
 	    		break;
@@ -38,17 +36,19 @@ public class JvnObjectImpl implements JvnObject {
 	    	case RWC :
 	    		break;
 	    	case WC:
-	    		lock = Lock.RWC;
+	    		this.lock = Lock.RWC;
 	    		break;
 	    	case W :
-	    		do{
-	    			try{
-						wait();
-					} catch (Exception e){
-						System.err.println("Error :" + e) ;
-						e.printStackTrace();
-					}
-	    		} while(lock.equals(Lock.W));
+	    		synchronized(this){
+		    		do{
+		    			try{
+							wait();
+						} catch (Exception e){
+							System.err.println("Error :" + e) ;
+							e.printStackTrace();
+						}
+		    		} while(lock.equals(Lock.W));
+	    		}
 	    		o = js.jvnLockRead(joi);
 	    		lock = Lock.RWC;
 	    		break;
@@ -57,18 +57,14 @@ public class JvnObjectImpl implements JvnObject {
 	    		lock = Lock.R;
 	    		break;
 			}
-		}
-		
-		
 
 	}
 
 	@Override
 	public void jvnLockWrite() throws JvnException {
-		synchronized(this){
-			System.out.println("jvnLockWrite : Lock."+lock.toString());
-			switch(lock){
-	    	case R :
+		switch(lock){
+    	case R :
+    		synchronized(this){
 	    		do{
 	    			try{
 						wait();
@@ -77,14 +73,16 @@ public class JvnObjectImpl implements JvnObject {
 						e.printStackTrace();
 					}
 	    		} while(lock.equals(Lock.R));
-	    		o = js.jvnLockWrite(joi);
-	    		lock = Lock.W;
-	    		break;
-	    	case RC :
-	    		o = js.jvnLockWrite(joi);
-	    		lock = Lock.W;
-	    		break;
-	    	case RWC :
+    		}
+    		o = js.jvnLockWrite(joi);
+    		lock = Lock.W;
+    		break;
+    	case RC :
+    		o = js.jvnLockWrite(joi);
+    		lock = Lock.W;
+    		break;
+    	case RWC :
+    		synchronized(this){
 	    		do{
 	    			try{
 						wait();
@@ -93,17 +91,17 @@ public class JvnObjectImpl implements JvnObject {
 						e.printStackTrace();
 					}
 	    		} while(lock.equals(Lock.RWC));
-	    		break;
-	    	case WC:
-	    		lock = Lock.W;
-	    		break;
-	    	case W :
-	    		break;
-	    	case NL :
-	    		o = js.jvnLockWrite(joi);
-	    		lock = Lock.W;
-	    		break;
-			}
+    		}
+    		break;
+    	case WC:
+    		lock = Lock.W;
+    		break;
+    	case W :
+    		break;
+    	case NL :
+    		o = js.jvnLockWrite(joi);
+    		lock = Lock.W;
+    		break;
 		}
 	}
 
@@ -127,6 +125,7 @@ public class JvnObjectImpl implements JvnObject {
 
 	@Override
 	public synchronized void jvnInvalidateReader() throws JvnException {
+		System.out.println("->jvnInvalidateReader");
 		if(lock.equals(Lock.RC)){
 			lock = Lock.NL;
 		}
@@ -142,13 +141,14 @@ public class JvnObjectImpl implements JvnObject {
 			lock = Lock.NL;
 		}
 		else{
-			throw new JvnException("Weird lock value");
+			throw new JvnException("jvnInvalidateReader : Weird lock value : "+lock);
 		}
 
 	}
 
 	@Override
 	public synchronized Serializable jvnInvalidateWriter() throws JvnException {
+		System.out.println("->jvnInvalidateWriter");
 		if(lock.equals(Lock.WC) || lock.equals(Lock.RWC)){
 			lock = Lock.NL;
 		}
@@ -163,13 +163,14 @@ public class JvnObjectImpl implements JvnObject {
 			} while(lock.equals(Lock.W));
 		}
 		else{
-			throw new JvnException("Weird lock value");
+			throw new JvnException("jvnInvalidateWriter : Weird lock value : "+lock);
 		}
 		return o;
 	}
 
 	@Override
 	public synchronized Serializable jvnInvalidateWriterForReader() throws JvnException {
+		System.out.println("->jvnInvalidateWriterForReader");
 		if(lock.equals(Lock.RWC)){
 			lock = Lock.R;
 		}
@@ -188,7 +189,7 @@ public class JvnObjectImpl implements JvnObject {
 			lock = Lock.RC;
 		}
 		else{
-			throw new JvnException("Weird lock value");
+			throw new JvnException("jvnInvalidateWriterForReader : Weird lock value : "+lock);
 		}
 		return o; 
 	}
