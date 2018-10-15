@@ -116,7 +116,7 @@ public class JvnCoordImpl
   * @return the current JVN object state
   * @throws java.rmi.RemoteException, JvnException
   **/
-   public Serializable jvnLockRead(int joi, JvnRemoteServer js)
+   public synchronized Serializable jvnLockRead(int joi, JvnRemoteServer js)
    throws java.rmi.RemoteException, JvnException{
     JvnInfos obj = mapCoord.get(names.get((Integer)joi));
     Lock l = obj.jvnGetLock();
@@ -155,7 +155,7 @@ public class JvnCoordImpl
   * @return the current JVN object state
   * @throws java.rmi.RemoteException, JvnException
   **/
-   public Serializable jvnLockWrite(int joi, JvnRemoteServer js)
+   public synchronized Serializable jvnLockWrite(int joi, JvnRemoteServer js)
    throws java.rmi.RemoteException, JvnException{
 	   JvnInfos obj = mapCoord.get(names.get((Integer)joi));
 	    Lock l = obj.jvnGetLock();
