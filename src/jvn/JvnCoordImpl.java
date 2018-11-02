@@ -130,7 +130,8 @@ public class JvnCoordImpl
     	Serializable newState = null;
     	for (Iterator<JvnRemoteServer> iterator = obj.jvnGetClients().iterator(); iterator.hasNext(); ) {
     		JvnRemoteServer client = iterator.next();
-    		newState = client.jvnInvalidateWriterForReader(joi); 
+    		newState = client.jvnInvalidateWriterForReader(joi);
+    		System.out.println("State changed");
     	}
     	if(newState == null) throw new JvnException("Could not get data when invalidating Writer");
     	obj.jvnSetState(newState);
@@ -175,6 +176,7 @@ public class JvnCoordImpl
 	    	for (Iterator<JvnRemoteServer> iterator = obj.jvnGetClients().iterator(); iterator.hasNext(); ) {
 	    		JvnRemoteServer client = iterator.next();
 	    		newState = client.jvnInvalidateWriter(joi);
+	    		System.out.println("State changed");
 	    	    iterator.remove(); 
 	    	}
 	    	if(newState == null) throw new JvnException("Could not get data when invalidating Writer");

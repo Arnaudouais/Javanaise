@@ -161,6 +161,7 @@ public class JvnObjectImpl implements JvnObject {
 					e.printStackTrace();
 				}
 			} while(lock.equals(Lock.W));
+			lock = Lock.NL;
 		}
 		else{
 			throw new JvnException("jvnInvalidateWriter : Weird lock value : "+lock);
