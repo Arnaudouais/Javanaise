@@ -140,6 +140,9 @@ public class JvnObjectImpl implements JvnObject {
 			} while(lock.equals(Lock.RWC) || lock.equals(Lock.R));
 			lock = Lock.NL;
 		}
+		else if (lock.equals(Lock.NL)){ //Invalidation already called
+			//nothing
+		}
 		else{
 			throw new JvnException("jvnInvalidateReader : Weird lock value : "+lock);
 		}
@@ -162,6 +165,9 @@ public class JvnObjectImpl implements JvnObject {
 				}
 			} while(lock.equals(Lock.W));
 			lock = Lock.NL;
+		}
+		else if (lock.equals(Lock.NL)){ //Invalidation already called
+			//nothing
 		}
 		else{
 			throw new JvnException("jvnInvalidateWriter : Weird lock value : "+lock);
@@ -188,6 +194,9 @@ public class JvnObjectImpl implements JvnObject {
 				}
 			} while(lock.equals(Lock.W));
 			lock = Lock.RC;
+		}
+		else if (lock.equals(Lock.NL)){ //Invalidation already called
+			//nothing
 		}
 		else{
 			throw new JvnException("jvnInvalidateWriterForReader : Weird lock value : "+lock);
