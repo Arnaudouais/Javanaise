@@ -110,7 +110,7 @@ public class JvnObjectImpl implements JvnObject {
 		if (lock.equals(Lock.W)) lock = Lock.WC;
 		if (lock.equals(Lock.R)) lock = Lock.RC;
 		if (lock.equals(Lock.RWC)) lock = Lock.WC;
-		notifyAll();
+		notify();
 	}
 
 	@Override

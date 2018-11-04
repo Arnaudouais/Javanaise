@@ -60,12 +60,13 @@ public class JvnServerImpl
 	**/
 	public  void jvnTerminate()
 	throws jvn.JvnException {
-//		try{
-//			coord.jvnTerminate(js);
-//		} catch (RemoteException e){
-//			System.err.println("Error :" + e) ;
-//			e.printStackTrace();
-//		}
+		try{
+			coord.jvnTerminate(js);
+		} catch (RemoteException e){
+			System.err.println("Error :" + e) ;
+			e.printStackTrace();
+		}
+		js = null;
 	} 
 	
 	/**
@@ -82,7 +83,7 @@ public class JvnServerImpl
 		objects.put(joi, obj);
 		return obj;
 		} catch (RemoteException e){
-			System.err.println("Error :" + e) ;
+			System.err.println("jvnCreateObject - Error :" + e) ;
 			e.printStackTrace();
 		}
 		return null; 
@@ -99,7 +100,7 @@ public class JvnServerImpl
 		try{
 			coord.jvnRegisterObject(jon, jo, (JvnRemoteServer)js);
 		} catch (RemoteException e){
-			System.err.println("Error :" + e) ;
+			System.err.println("jvnRegisterObject - Error :" + e) ;
 			e.printStackTrace();
 		}
 	}
@@ -120,7 +121,7 @@ public class JvnServerImpl
 			}
 			return tmp;
 		} catch (RemoteException e){
-			System.err.println("Error :" + e) ;
+			System.err.println("jvnLookupObject - Error :" + e) ;
 			e.printStackTrace();
 		}
 		return null;
@@ -137,7 +138,7 @@ public class JvnServerImpl
 	   	try{
 	   		return coord.jvnLockRead(joi, js);
 		} catch (RemoteException e){
-			System.err.println("Error :" + e) ;
+			System.err.println("jvnLockRead - Error :" + e) ;
 			e.printStackTrace();
 		}
 		return null;
@@ -154,7 +155,7 @@ public class JvnServerImpl
 	   try{
 	   		return coord.jvnLockWrite(joi, js);
 		} catch (RemoteException e){
-			System.err.println("Error :" + e) ;
+			System.err.println("jvnLockWrite - Error :" + e) ;
 			e.printStackTrace();
 		}
 		return null;

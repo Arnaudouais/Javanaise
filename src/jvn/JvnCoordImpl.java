@@ -203,7 +203,10 @@ public class JvnCoordImpl
 	**/
     public void jvnTerminate(JvnRemoteServer js)
 	 throws java.rmi.RemoteException, JvnException {
-	 // to be completed
+
+    	for (JvnInfos value : mapCoord.values()) {
+    	    value.jvnRemoveServer(js);
+    	}
     }
 }
 
